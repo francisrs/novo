@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍟 Lista de Compras</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          mcred: '#DA291C',
+          mcreddark: '#B5231A',
+          mcyellow: '#FFC72C',
+          mcyellowdark: '#FFB300',
+        },
+        animation: {
+          'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          'pop': 'pop 0.25s ease-out',
+        },
+        keyframes: {
+          'pulse-ring': {
+            '0%': { boxShadow: '0 0 0 0 rgba(218,41,28,0.6)' },
+            '70%': { boxShadow: '0 0 0 18px rgba(218,41,28,0)' },
+            '100%': { boxShadow: '0 0 0 0 rgba(218,41,28,0)' },
+          },
+          'pop': {
+            '0%': { transform: 'scale(0.85)', opacity: 0 },
+            '100%': { transform: 'scale(1)', opacity: 1 },
+          }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #fff3cd; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: #DA291C; border-radius: 10px; }
+  .item-enter { animation: pop 0.25s ease-out; }
+  .mic-listening {
+    background-color: #ef4444 !important;
+    animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  input[type="checkbox"].mc-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2.5px solid #DA291C;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  input[type="checkbox"].mc-checkbox:checked {
+    background-color: #DA291C;
+    border-color: #DA291C;
+  }
+  input[type="checkbox"].mc-checkbox:checked::after {
+    content: "✔";
+    color: #FFC72C;
+    font-size: 0.9rem;
+    font-weight: bold;
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-yellow-50 via-white to-yellow-50 flex justify-center px-3 py-6">
+
+<div class="w-full max-w-md">
+
+  <!-- Header -->
+  <header class="bg-mcred rounded-2xl shadow-lg px-5 py-5 mb-4 relative overflow-hidden">
+    <div class="absolute -right-6 -top-6 w-24 h-24 bg-mcyellow rounded-full opacity-30"></div>
+    <div class="absolute -left-8 -bottom-8 w-20 h-20 bg-mcyellow rounded-full opacity-20"></div>
+    <div class="relative flex items-center gap-3">
+      <div class="bg-mcyellow w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner">
+        🍟
+      </div>
+      <div>
+        <h1 class="text-mcyellow text-xl sm:text-2xl font-extrabold tracking-tight leading-tight">Lista de Compras</h1>
+        <p class="text-yellow-100 text-xs sm:text-sm font-medium">Fale ou digite seus itens</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Input Manual -->
+  <div class="bg-white rounded-2xl shadow-md p-4 mb-4">
+    <form id="addForm" class="flex gap-2">
+      <input
+        id="itemInput"
+        type="text"
+        placeholder="Ex: Pão de hambúrguer..."
+        autocomplete="off"
+        class="flex-1 min-w-0 border-2 border-yellow-200 focus:border-mcred focus:outline-none rounded-xl px-4 py-3 text-gray-700 text-sm sm:text-base transition-colors"
+      />
+      <button
+        type="submit"
+        class="bg-mcred hover:bg-mcreddark active:scale-95 text-white font-bold px-4 sm:px-5 py-3 rounded-xl shadow transition-all flex items-center gap-1.5 whitespace-nowrap text-sm sm:text-base"
+      >
+        <i class="fa-solid fa-plus"></i>
+        <span class="hidden sm:inline">Adicionar</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Entrada por Voz -->
+  <div class="bg-white rounded-2xl shadow-md p-5 mb-4 flex flex-col items-center gap-3">
+    <button
+      id="micBtn"
+      class="bg-mcyellow hover:bg-mcyellowdark text-mcred w-20 h-20 rounded-full shadow-lg flex items-center justify-center text-3xl transition-all active:scale-90 border-4 border-white ring-2 ring-mcred/20"
+      title="Clique para falar os itens"
+    >
+      <i class="fa-solid fa-microphone"></i>
+    </button>
+    <p id="micStatus" class="text-sm text-gray-500 font-medium text-center min-h-[1.25rem]">Toque para ditar os itens 🎤</p>
+  </div>
+
+  <!-- Lista -->
+  <div class="bg-white rounded-2xl shadow-md p-4">
+    <div class="flex items-center justify-between mb-3 px-1">
+      <h2 class="font-bold text-gray-700 text-sm sm:text-base">
+        Itens <span class="bg-mcyellow text-mcred px-2 py-0.5 rounded-full text-xs font-extrabold ml-1" id="itemCount">0</span>
+      </h2>
+      <button
+        id="clearBtn"
+        class="text-mcred hover:text-white hover:bg-mcred border border-mcred rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5"
+      >
+        <i class="fa-solid fa-trash-can"></i>
+        Limpar Tudo
+      </button>
+    </div>
+
+    <ul id="itemList" class="flex flex-col gap-2 max-h-[45vh] overflow-y-auto pr-1"></ul>
+
+    <div id="emptyState" class="text-center py-10 text-gray-400">
+      <div class="text-5xl mb-2">🛒</div>
+      <p class="text-sm font-medium">Sua lista está vazia.</p>
+      <p class="text-xs">Adicione itens digitando ou usando o microfone!</p>
+    </div>
+  </div>
+
+  <footer class="text-center text-xs text-gray-400 mt-5 pb-2">
+    Feito com 🍔 e 🍟 — Lista inteligente de compras
+  </footer>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'mc_shopping_list_items';
+  let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+  const itemList = document.getElementById('itemList');
+  const itemCount = document.getElementById('itemCount');
+  const emptyState = document.getElementById('emptyState');
+  const itemInput = document.getElementById('itemInput');
+  const addForm = document.getElementById('addForm');
+  const clearBtn = document.getElementById('clearBtn');
+  const micBtn = document.getElementById('micBtn');
+  const micStatus = document.getElementById('micStatus');
+
+  function saveItems() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  function render() {
+    itemList.innerHTML = '';
+    if (items.length === 0) {
+      emptyState.classList.remove('hidden');
+    } else {
+      emptyState.classList.add('hidden');
+    }
+
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'item-enter flex items-center gap-3 bg-yellow-50 hover:bg-yellow-100 rounded-xl px-3 py-2.5 transition-colors';
+
+      li.innerHTML = `
+        <input type="checkbox" class="mc-checkbox" ${item.done ? 'checked' : ''} data-id="${item.id}" />
+        <span class="flex-1 text-sm sm:text-base text-gray-700 break-words ${item.done ? 'line-through text-gray-400' : ''}" data-id="${item.id}">
+          ${item.text}
+        </span>
+        <button class="text-mcred/70 hover:text-mcred hover:bg-red-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0" data-id="${item.id}" title="Remover">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+      itemList.appendChild(li);
+    });
+
+    itemCount.textContent = items.length;
+
+    // Eventos checkbox
+    itemList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => toggleItem(cb.dataset.id));
+    });
+
+    // Eventos remover
+    itemList.querySelectorAll('button[data-id]').forEach(btn => {
+      btn.addEventListener('click', () => removeItem(btn.dataset.id));
+    });
+  }
+
+  function addItem(text) {
+    text = text.trim();
+    if (!text) return;
+    items.push({
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      text: capitalize(text),
+      done: false
+    });
+    saveItems();
+    render();
+  }
+
+  function toggleItem(id) {
+    const item = items.find(i => i.id === id);
+    if (item) item.done = !item.done;
+    saveItems();
+    render();
+  }
+
+  function removeItem(id) {
+    items = items.filter(i => i.id !== id);
+    saveItems();
+    render();
+  }
+
+  function clearAll() {
+    if (items.length === 0) return;
+    if (confirm('Tem certeza que deseja apagar todos os itens da lista?')) {
+      items = [];
+      saveItems();
+      render();
+    }
+  }
+
+  // Form manual
+  addForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    addItem(itemInput.value);
+    itemInput.value = '';
+    itemInput.focus();
+  });
+
+  clearBtn.addEventListener('click', clearAll);
+
+  // ===== Reconhecimento de Voz =====
+  let recognition = null;
+  let isListening = false;
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (SpeechRecognitionAPI) {
+    recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          const transcript = event.results[i][0].transcript;
+          addItem(transcript);
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('Erro no reconhecimento de voz:', event.error);
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        // mantém escutando se ainda ativo
+        return;
+      }
+      stopListening();
+      micStatus.textContent = 'Não foi possível acessar o microfone 😕';
+    };
+
+    recognition.onend = () => {
+      if (isListening) {
+        // reinicia automaticamente para manter escuta contínua
+        try { recognition.start(); } catch (e) {}
+      }
+    };
+
+    micBtn.addEventListener('click', () => {
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
+    });
+  } else {
+    micBtn.disabled = true;
+    micBtn.classList.add('opacity-40', 'cursor-not-allowed');
+    micStatus.textContent = 'Reconhecimento de voz não suportado neste navegador.';
+  }
+
+  function startListening() {
+    try {
+      recognition.start();
+      isListening = true;
+      micBtn.classList.add('mic-listening');
+      micBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      micStatus.textContent = '🔴 Ouvindo... diga os itens um a um';
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  function stopListening() {
+    isListening = false;
+    try { recognition.stop(); } catch (e) {}
+    micBtn.classList.remove('mic-listening');
+    micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+    micStatus.textContent = 'Toque para ditar os itens 🎤';
+  }
+
+  // Render inicial
+  render();
+</script>
+</body>
+</html>
